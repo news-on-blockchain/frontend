@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id           String   @id @default(cuid()) @map("_id")
+  sessionToken String   @unique
+  device       String?
+  userId       String
+  expires      DateTime
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map(name: "sessions")
+}
+
+enum Role {
+  consumer
+  journalist
+  auditor
+}
+model User {
+  id                String    @id @default(cuid()) @map("_id")
+  fullName          String?
+  userName          String    @unique
+  email             String
+  avatar            String?
+  role              Role      @default(consumer)
+  createdAt         DateTime  @default(now()) @map(name: "created_at")
+  updatedAt         DateTime  @default(now()) @map(name: "updated_at")
+  refresh_token     String?
+  preference        String?
+  address           String?
+
+  sessions Session[]
+  News     News[]
+  Comments Comments[]
+
+  @@map(name: "users")
+}
+
+enum Status {
+  published
+  archived
+}
+
+model News {
+  ID        String   @id @default(cuid()) @map("_id")
+  headline  String
+  content   Json?
+  publisher  String
+  published Status   @default(published)
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @default(now()) @map(name: "updated_at")
+  datetime  DateTime @default(now())
+  upvote    Int      @default(0)
+  downvote  Int      @default(0)
+  Category  String
+  Image     String?
+  Related   String?
+  Source    String?
+  Summary   String?
+  URL       String?
+  comments   Comments[]
+
+  author User @relation(fields: [publisher], references: [id])
+
+  @@map(name: "news")
+}
+
+model Comments {
+    id        String   @id @default(cuid()) @map("_id")
+    publisher    String
+    newsId    String
+    content   String
+    createdAt DateTime @default(now()) @map(name: "created_at")
+    updatedAt DateTime @default(now()) @map(name: "updated_at")
+
+    news   News @relation(fields: [newsId], references: [ID])
+    author User @relation(fields: [publisher], references: [id])
+
+    @@map("comments")
+}
